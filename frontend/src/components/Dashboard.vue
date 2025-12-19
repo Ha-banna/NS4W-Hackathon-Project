@@ -208,12 +208,13 @@ const columns: ColumnsType = [
     title: 'Actions',
     key: 'actions',
     width: 120,
-    customRender: () => {
+    customRender: ({ record }: { record: any }) => {
       // @ts-ignore
-      return h(Space, {}, () => [
-        // @ts-ignore
-        h(Button, { type: 'link', size: 'small' }, () => 'View')
-      ])
+      return h(Button, { 
+        type: 'link', 
+        size: 'small',
+        onClick: () => router.push(`/cv/${record.key}`)
+      }, () => 'View')
     },
   },
 ]
