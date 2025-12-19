@@ -107,10 +107,10 @@ const userFlowSteps = [
           and authenticity detection powered by AI and LLM technology.
         </Paragraph>
         <Space size="large" class="hero-buttons">
-          <Button type="primary" size="large" class="cta-primary" @click="router.push('/dashboard')">
+          <Button type="primary" size="large" class="cta-primary" @click="router.push('/request-join')">
             Get Started
           </Button>
-          <Button size="large" class="cta-secondary" @click="router.push('/dashboard')">
+          <Button size="large" class="cta-secondary" @click="router.push('/login')">
             Login
           </Button>
         </Space>

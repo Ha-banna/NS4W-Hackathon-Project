@@ -14,8 +14,7 @@ import {
   Tag,
   Typography,
   Row,
-  Col,
-  Progress
+  Col
 } from 'ant-design-vue'
 import {
   PlusOutlined,
@@ -144,8 +143,7 @@ const filteredData = computed(() => {
 })
 
 const handleAddCV = () => {
-  // Handle add CV action
-  console.log('Add CV clicked')
+  router.push('/create-cv')
 }
 
 const columns: ColumnsType = [
