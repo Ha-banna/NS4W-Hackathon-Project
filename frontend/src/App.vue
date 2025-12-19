@@ -3,6 +3,10 @@ import { computed } from 'vue'
 import { ConfigProvider, theme } from 'ant-design-vue'
 import LandingPage from './components/LandingPage.vue'
 
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+
 // Always use dark theme with purple primary color
 const themeConfig = computed(() => ({
   algorithm: theme.darkAlgorithm,
@@ -15,7 +19,7 @@ const themeConfig = computed(() => ({
 <template>
   <ConfigProvider :theme="themeConfig">
     <div class="app-wrapper">
-      <LandingPage />
+      <router-view />
     </div>
   </ConfigProvider>
 </template>

@@ -8,6 +8,10 @@ import {
   Space, 
   Steps
 } from 'ant-design-vue'
+
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
 import {
   SearchOutlined,
   CheckCircleOutlined,
@@ -103,10 +107,10 @@ const userFlowSteps = [
           and authenticity detection powered by AI and LLM technology.
         </Paragraph>
         <Space size="large" class="hero-buttons">
-          <Button type="primary" size="large" class="cta-primary">
+          <Button type="primary" size="large" class="cta-primary" @click="router.push('/dashboard')">
             Get Started
           </Button>
-          <Button size="large" class="cta-secondary">
+          <Button size="large" class="cta-secondary" @click="router.push('/dashboard')">
             Login
           </Button>
         </Space>
@@ -188,7 +192,7 @@ const userFlowSteps = [
             <Paragraph class="cta-description">
               Start evaluating candidates with AI-powered insights today
             </Paragraph>
-            <Button type="primary" size="large" class="cta-button">
+            <Button type="primary" size="large" class="cta-button" @click="router.push('/dashboard')">
               Get Started Now
             </Button>
           </div>

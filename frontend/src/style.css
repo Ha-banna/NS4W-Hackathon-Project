@@ -60,8 +60,4 @@ button:focus-visible {
 #app {
   width: 100%;
   min-height: 100vh;
-  padding: 2rem;
 }
-
-/* Light mode styles are now in :root */
-/* Dark mode styles are applied via .dark class */
