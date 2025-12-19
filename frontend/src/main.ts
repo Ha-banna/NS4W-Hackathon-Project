@@ -11,6 +11,12 @@ if (typeof document !== 'undefined') {
   document.documentElement.setAttribute('data-theme', 'dark')
 }
 
+// Apply dark theme immediately
+if (typeof document !== 'undefined') {
+  document.documentElement.classList.add('dark')
+  document.documentElement.setAttribute('data-theme', 'dark')
+}
+
 const app = createApp(App)
 app.use(Antd)
 app.use(router)

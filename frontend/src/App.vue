@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useRouter } from 'vue-router'
 import { ConfigProvider, theme } from 'ant-design-vue'
+import LandingPage from './components/LandingPage.vue'
+
+import { useRouter } from 'vue-router'
 
 const router = useRouter()
 
