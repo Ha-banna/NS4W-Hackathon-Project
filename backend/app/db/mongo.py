@@ -1,7 +1,7 @@
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 
-from app.core.config import settings  # <-- import the instance, not the class
+from app.core.config import settings
 
 client: MongoClient | None = None
 db = None 

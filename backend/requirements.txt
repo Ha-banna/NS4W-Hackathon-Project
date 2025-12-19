@@ -1,1 +1,1 @@
-fastapi uvicorn pydantic-settings python-dotenv "pymongo[srv]"
+fastapi uvicorn pydantic-settings python-dotenv "pymongo[srv]" supertokens-python sniffio
