@@ -1,12 +1,16 @@
 from fastapi import FastAPI
-from app.core.config import settings
+from contextlib import asynccontextmanager
 
-app = FastAPI()
+from app.db.mongo import connect_to_mongo, close_mongo_connection
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    connect_to_mongo()
+    yield
+    close_mongo_connection()
+
+app = FastAPI(lifespan=lifespan)
 
 @app.get("/")
 def root():
     return {"status": "ok"}
-
-@app.get("/health")
-def health():
-    return {"database_configured": bool(settings.DATABASE_URL)}
