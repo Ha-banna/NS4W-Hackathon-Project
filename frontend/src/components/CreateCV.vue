@@ -60,7 +60,7 @@ const handleSubmit = async () => {
 
     message.success('CV submitted successfully!')
     console.log('Upload response:', response.data)
-    
+
     // Navigate back to dashboard after submission
     setTimeout(() => {
       router.push('/dashboard')
@@ -80,18 +80,18 @@ const uploadProps: UploadProps = {
   maxCount: 1,
   beforeUpload: (file) => {
     const isPDF = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
-    
+
     if (!isPDF) {
       message.error('You can only upload PDF files!')
       return false
     }
-    
+
     const isLt50M = file.size / 1024 / 1024 < 50
     if (!isLt50M) {
       message.error('File must be smaller than 50MB!')
       return false
     }
-    
+
     // Prevent automatic upload - we'll handle it manually in handleSubmit
     return false
   },
@@ -130,17 +130,8 @@ const uploadProps: UploadProps = {
       <!-- Form Card -->
       <Card class="form-card">
         <Form layout="vertical" class="cv-form">
-          <Form.Item 
-            label="CV File" 
-            required
-            class="form-item"
-          >
-            <Upload
-              v-model:file-list="fileList"
-              v-bind="uploadProps"
-              class="upload-component"
-              :drag="true"
-            >
+          <Form.Item label="CV File" required class="form-item">
+            <Upload v-model:file-list="fileList" v-bind="uploadProps" class="upload-component" :drag="true">
               <div class="upload-area">
                 <p class="upload-icon">
                   <UploadOutlined />
@@ -153,20 +144,10 @@ const uploadProps: UploadProps = {
 
           <Form.Item class="form-actions">
             <Space size="large">
-              <Button 
-                type="primary" 
-                size="large" 
-                class="submit-button"
-                :loading="uploading"
-                @click="handleSubmit"
-              >
+              <Button type="primary" size="large" class="submit-button" :loading="uploading" @click="handleSubmit">
                 Submit CV
               </Button>
-              <Button 
-                size="large" 
-                class="cancel-button"
-                @click="router.push('/dashboard')"
-              >
+              <Button size="large" class="cancel-button" @click="router.push('/dashboard')">
                 Cancel
               </Button>
             </Space>
@@ -231,15 +212,19 @@ const uploadProps: UploadProps = {
   0% {
     transform: translate(-200px, -200px) scale(1);
   }
+
   25% {
     transform: translate(100px, 150px) scale(1.2);
   }
+
   50% {
     transform: translate(300px, -100px) scale(0.9);
   }
+
   75% {
     transform: translate(50px, 200px) scale(1.1);
   }
+
   100% {
     transform: translate(-200px, -200px) scale(1);
   }
@@ -249,15 +234,19 @@ const uploadProps: UploadProps = {
   0% {
     transform: translate(calc(100vw + 150px), calc(50vh - 200px)) scale(1);
   }
+
   25% {
     transform: translate(calc(100vw - 100px), calc(50vh + 100px)) scale(1.1);
   }
+
   50% {
     transform: translate(calc(100vw - 400px), calc(50vh - 300px)) scale(0.8);
   }
+
   75% {
     transform: translate(calc(100vw - 200px), calc(50vh + 200px)) scale(1.2);
   }
+
   100% {
     transform: translate(calc(100vw + 150px), calc(50vh - 200px)) scale(1);
   }
@@ -267,15 +256,19 @@ const uploadProps: UploadProps = {
   0% {
     transform: translate(calc(20vw - 300px), calc(100vh + 300px)) scale(1);
   }
+
   25% {
     transform: translate(calc(20vw + 200px), calc(100vh - 100px)) scale(1.3);
   }
+
   50% {
     transform: translate(calc(20vw + 500px), calc(100vh - 400px)) scale(0.9);
   }
+
   75% {
     transform: translate(calc(20vw + 100px), calc(100vh - 200px)) scale(1.1);
   }
+
   100% {
     transform: translate(calc(20vw - 300px), calc(100vh + 300px)) scale(1);
   }

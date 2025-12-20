@@ -93,18 +93,51 @@ def extract_text_from_pdf(pdf_path: str) -> str:
             t = page.extract_text() or ""
             if t.strip():
                 parts.append(t)
+
+        links = extract_links_from_pdf(pdf_path)
+        if links:
+            parts.extend(links)      
+
         return "\n\n".join(parts).strip()
+        
     except Exception:
         # Fallback: pdfplumber
         import pdfplumber
-
         parts = []
         with pdfplumber.open(pdf_path) as pdf:
             for p in pdf.pages:
                 t = p.extract_text() or ""
                 if t.strip():
                     parts.append(t)
+
+        links = extract_links_from_pdf(pdf_path)
+        if links:
+            parts.extend(links)      
+
         return "\n\n".join(parts).strip()
+
+def extract_links_from_pdf(pdf_path: str) -> List[str]:
+    from pypdf import PdfReader
+
+    reader = PdfReader(pdf_path)
+    links = []
+
+    for page in reader.pages:
+        annots = page.get("/Annots")
+        if not annots:
+            continue
+
+        for a in annots:
+            obj = a.get_object()
+            action = obj.get("/A")
+            if not action:
+                continue
+
+            uri = action.get("/URI")
+            if uri:
+                links.append(uri)
+
+    return list(dict.fromkeys(links))
 
 
 # ----------------------------

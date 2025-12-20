@@ -58,7 +58,7 @@ const transformAPIDataToCategories = (apiData: any): Category[] => {
   if (apiData.skill_evidence?.skills) {
     const skillItems: CVItem[] = []
     const skills = apiData.skill_evidence.skills
-    
+
     for (const [skillName, skillData] of Object.entries(skills)) {
       const skill = skillData as any
       if (skill.status === 'supported' && !skill.fake) {
@@ -66,8 +66,8 @@ const transformAPIDataToCategories = (apiData: any): Category[] => {
         skillItems.push({
           id: String(itemId++),
           name: skillName,
-          value: skill.evidence?.length 
-            ? `${skill.evidence.length} evidence(s) found` 
+          value: skill.evidence?.length
+            ? `${skill.evidence.length} evidence(s) found`
             : 'No evidence',
           authenticityScore: confidence
         })
@@ -139,10 +139,9 @@ const loadCVData = async () => {
 
   try {
     // Fetch all CVs and find the one matching the ID
-    const response = await apiClient.get('/cv-results')
-    const data = Array.isArray(response.data) ? response.data : [response.data]
-    const cv = data.find((item: any) => String(item._id) === cvId) || data[0]
-
+    const response = await apiClient.get(`/dashboard/cv-result/${cvId}`)
+    const cv = response.data;
+    console.log(cv)
     if (!cv) {
       message.error('CV not found')
       router.push('/dashboard')
@@ -200,12 +199,7 @@ const getScoreLabel = (score: number) => {
       <div class="main-content">
         <!-- Header -->
         <div class="page-header">
-          <Button 
-            type="text" 
-            size="large" 
-            class="back-button" 
-            @click="router.push('/dashboard')"
-          >
+          <Button type="text" size="large" class="back-button" @click="router.push('/dashboard')">
             <template #icon>
               <ArrowLeftOutlined />
             </template>
@@ -264,21 +258,13 @@ const getScoreLabel = (score: number) => {
 
           <!-- Dynamic Categories -->
           <div class="categories-container">
-            <div 
-              v-for="(category, categoryIndex) in cvData.categories" 
-              :key="categoryIndex"
-              class="category-section"
-            >
+            <div v-for="(category, categoryIndex) in cvData.categories" :key="categoryIndex" class="category-section">
               <Title :level="5" class="category-title">
                 {{ category.name }}
               </Title>
-              
+
               <div class="category-items">
-                <div 
-                  v-for="item in category.items" 
-                  :key="item.id"
-                  class="category-item"
-                >
+                <div v-for="item in category.items" :key="item.id" class="category-item">
                   <div class="item-content">
                     <div class="item-header">
                       <Text strong class="item-name">{{ item.name }}</Text>
@@ -286,10 +272,7 @@ const getScoreLabel = (score: number) => {
                     </div>
                     <Text class="item-value">{{ item.value }}</Text>
                     <div class="item-footer">
-                      <Tag 
-                        :color="getScoreColor(item.authenticityScore)"
-                        class="authenticity-tag"
-                      >
+                      <Tag :color="getScoreColor(item.authenticityScore)" class="authenticity-tag">
                         {{ getScoreLabel(item.authenticityScore) }} Authenticity
                       </Tag>
                     </div>
@@ -365,15 +348,19 @@ const getScoreLabel = (score: number) => {
   0% {
     transform: translate(-200px, -200px) scale(1);
   }
+
   25% {
     transform: translate(100px, 150px) scale(1.2);
   }
+
   50% {
     transform: translate(300px, -100px) scale(0.9);
   }
+
   75% {
     transform: translate(50px, 200px) scale(1.1);
   }
+
   100% {
     transform: translate(-200px, -200px) scale(1);
   }
@@ -383,15 +370,19 @@ const getScoreLabel = (score: number) => {
   0% {
     transform: translate(calc(100vw + 150px), calc(50vh - 200px)) scale(1);
   }
+
   25% {
     transform: translate(calc(100vw - 100px), calc(50vh + 100px)) scale(1.1);
   }
+
   50% {
     transform: translate(calc(100vw - 400px), calc(50vh - 300px)) scale(0.8);
   }
+
   75% {
     transform: translate(calc(100vw - 200px), calc(50vh + 200px)) scale(1.2);
   }
+
   100% {
     transform: translate(calc(100vw + 150px), calc(50vh - 200px)) scale(1);
   }
@@ -401,15 +392,19 @@ const getScoreLabel = (score: number) => {
   0% {
     transform: translate(calc(20vw - 300px), calc(100vh + 300px)) scale(1);
   }
+
   25% {
     transform: translate(calc(20vw + 200px), calc(100vh - 100px)) scale(1.3);
   }
+
   50% {
     transform: translate(calc(20vw + 500px), calc(100vh - 400px)) scale(0.9);
   }
+
   75% {
     transform: translate(calc(20vw + 100px), calc(100vh - 200px)) scale(1.1);
   }
+
   100% {
     transform: translate(calc(20vw - 300px), calc(100vh + 300px)) scale(1);
   }
