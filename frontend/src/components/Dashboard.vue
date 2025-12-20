@@ -78,16 +78,9 @@ const cvData = ref([
 ])
 
 const searchText = ref('')
-const positionFilter = ref<string | undefined>(undefined)
 const dateRange = ref<[string, string] | null>(null)
 const sortField = ref<string | undefined>(undefined)
 const sortOrder = ref<'ascend' | 'descend' | undefined>(undefined)
-
-// Get unique positions for filter
-const positions = computed(() => {
-  const unique = new Set(cvData.value.map(cv => cv.position))
-  return Array.from(unique)
-})
 
 // Filtered and sorted data
 const filteredData = computed(() => {
@@ -99,14 +92,8 @@ const filteredData = computed(() => {
     result = result.filter(cv =>
       cv.name.toLowerCase().includes(search) ||
       cv.email.toLowerCase().includes(search) ||
-      cv.position.toLowerCase().includes(search) ||
       cv.skills.some(skill => skill.toLowerCase().includes(search))
     )
-  }
-
-  // Position filter
-  if (positionFilter.value) {
-    result = result.filter(cv => cv.position === positionFilter.value)
   }
 
   // Date range filter
@@ -159,13 +146,6 @@ const columns: ColumnsType = [
     dataIndex: 'email',
     key: 'email',
     width: 200,
-  },
-  {
-    title: 'Position',
-    dataIndex: 'position',
-    key: 'position',
-    sorter: true,
-    width: 180,
   },
   {
     title: 'Score',
@@ -231,7 +211,6 @@ const handleTableChange = (_pagination: any, _filters: any, sorter: any) => {
 
 const clearFilters = () => {
   searchText.value = ''
-  positionFilter.value = undefined
   dateRange.value = null
   sortField.value = undefined
   sortOrder.value = undefined
@@ -288,19 +267,6 @@ const clearFilters = () => {
                 <SearchOutlined />
               </template>
             </Input>
-          </Col>
-          <Col :xs="24" :sm="12" :md="8" :lg="6">
-            <Select
-              v-model:value="positionFilter"
-              placeholder="Filter by Position"
-              size="large"
-              allow-clear
-              class="filter-select"
-            >
-              <Select.Option v-for="position in positions" :key="position" :value="position">
-                {{ position }}
-              </Select.Option>
-            </Select>
           </Col>
           <Col :xs="24" :sm="12" :md="8" :lg="6">
             <Space>
