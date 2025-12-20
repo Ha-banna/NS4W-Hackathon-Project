@@ -3,10 +3,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     MONGODB_URI: str
     MONGODB_DB: str
-
-    SUPERTOKENS_CONNECTION_URI: str
-    SUPERTOKENS_API_KEY: str
-
+    
     API_DOMAIN: str
     API_BASE_PATH: str
 
