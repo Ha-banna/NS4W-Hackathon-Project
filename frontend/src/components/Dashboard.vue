@@ -188,9 +188,9 @@ const fetchCVs = async () => {
     const data = Array.isArray(response.data) ? response.data : [response.data]
     
     cvData.value = data.map((cv: any) => {
-      const candidate = cv.cv?.candidate || {}
-      const skills = cv.cv?.skills || {}
-      const technicalSkills = skills.technical || []
+      const candidate = cv.cv?.candidate || {};
+      const skills = cv.cv?.skills || {};
+      const technicalSkills = skills.technical || [];
       
       return {
         key: String(cv._id || Math.random()),
