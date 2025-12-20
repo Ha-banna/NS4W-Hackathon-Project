@@ -185,16 +185,22 @@ const fetchCVs = async () => {
   try {
     const response = await apiClient.get('/cv-results')
     // Transform the API response to match our data structure
-    // cvData.value = response.data.map((cv: any) => ({
-    //   key: cv.id || cv._id || String(Math.random()),
-    //   name: cv.name || 'Unknown',
-    //   email: cv.email || '',
-    //   score: cv.score || cv.overallScore || 0,
-    //   uploadedDate: cv.uploadedDate || cv.createdAt || new Date().toISOString().split('T')[0],
-    //   skills: cv.skills || []
-    // }))
-
-    console.log(response);
+    const data = Array.isArray(response.data) ? response.data : [response.data]
+    
+    cvData.value = data.map((cv: any) => {
+      const candidate = cv.cv?.candidate || {}
+      const skills = cv.cv?.skills || {}
+      const technicalSkills = skills.technical || []
+      
+      return {
+        key: String(cv._id || Math.random()),
+        name: candidate.full_name || 'Unknown',
+        email: candidate.contact?.email || '',
+        score: Math.round(cv.projects_authenticity?.overall_authenticity_score || 0),
+        uploadedDate: cv.cv?.meta?.last_updated || new Date().toISOString().split('T')[0],
+        skills: technicalSkills.slice(0, 10) // Limit to first 10 skills
+      }
+    })
   } catch (error: any) {
     console.error('Error fetching CVs:', error)
     message.error('Failed to load CVs. Please try again later.')
