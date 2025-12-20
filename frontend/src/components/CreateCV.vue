@@ -21,7 +21,6 @@ import type { UploadFile, UploadProps } from 'ant-design-vue'
 const router = useRouter()
 const { Title, Paragraph } = Typography
 
-const positionName = ref('')
 const fileList = ref<UploadFile[]>([])
 
 const handleFileChange: UploadProps['onChange'] = (info) => {
@@ -34,11 +33,6 @@ const handleFileChange: UploadProps['onChange'] = (info) => {
 }
 
 const handleSubmit = () => {
-  if (!positionName.value.trim()) {
-    message.error('Please enter a position name')
-    return
-  }
-  
   if (fileList.value.length === 0) {
     message.error('Please upload a CV file')
     return
@@ -46,7 +40,6 @@ const handleSubmit = () => {
 
   // Handle CV submission
   message.success('CV submitted successfully!')
-  console.log('Position:', positionName.value)
   console.log('File:', fileList.value[0])
   
   // Navigate back to dashboard after submission
@@ -115,19 +108,6 @@ const uploadProps: UploadProps = {
       <!-- Form Card -->
       <Card class="form-card">
         <Form layout="vertical" class="cv-form">
-          <Form.Item 
-            label="Position Name" 
-            required
-            class="form-item"
-          >
-            <Input
-              v-model:value="positionName"
-              placeholder="e.g., Senior Developer, Frontend Engineer, etc."
-              size="large"
-              class="form-input"
-            />
-          </Form.Item>
-
           <Form.Item 
             label="CV File" 
             required

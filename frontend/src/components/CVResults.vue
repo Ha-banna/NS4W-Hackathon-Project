@@ -39,7 +39,6 @@ interface CVData {
   id: string
   name: string
   email: string
-  position: string
   uploadedDate: string
   overallScore: number
   categories: Category[]
@@ -149,7 +148,6 @@ const loadCVData = () => {
       id: '1',
       name: 'John Doe',
       email: 'john.doe@example.com',
-      position: 'Senior Developer',
       uploadedDate: '2024-01-15',
       overallScore: 85
     },
@@ -157,7 +155,6 @@ const loadCVData = () => {
       id: '2',
       name: 'Jane Smith',
       email: 'jane.smith@example.com',
-      position: 'Frontend Developer',
       uploadedDate: '2024-01-14',
       overallScore: 92
     },
@@ -165,7 +162,6 @@ const loadCVData = () => {
       id: '3',
       name: 'Bob Johnson',
       email: 'bob.johnson@example.com',
-      position: 'Full Stack Developer',
       uploadedDate: '2024-01-13',
       overallScore: 68
     }
@@ -175,7 +171,6 @@ const loadCVData = () => {
     id: cvId,
     name: 'Unknown Candidate',
     email: 'unknown@example.com',
-    position: 'Developer',
     uploadedDate: new Date().toISOString().split('T')[0],
     overallScore: 75
   }
@@ -239,10 +234,6 @@ const getScoreLabel = (score: number) => {
                 <div>
                   <Text type="secondary">Candidate:</Text>
                   <Text strong class="info-text">{{ cvData.name }}</Text>
-                </div>
-                <div>
-                  <Text type="secondary">Position:</Text>
-                  <Text strong class="info-text">{{ cvData.position }}</Text>
                 </div>
                 <div>
                   <Text type="secondary">Email:</Text>
