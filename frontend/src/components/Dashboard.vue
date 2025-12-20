@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, h } from 'vue'
+import { ref, computed, h, onMounted } from 'vue'
 
 import { useRouter } from 'vue-router'
 
@@ -10,11 +10,11 @@ import {
   Input,
   Button,
   Space,
-  Select,
   Tag,
   Typography,
   Row,
-  Col
+  Col,
+  message
 } from 'ant-design-vue'
 import {
   PlusOutlined,
@@ -25,57 +25,21 @@ import {
 } from '@ant-design/icons-vue'
 import type { ColumnsType } from 'ant-design-vue/es/table'
 import ScoreCircle from './ScoreCircle.vue'
+import apiClient from '../api/axios'
 
 const { Title, Paragraph } = Typography
 
-// Mock data - replace with actual API data
-const cvData = ref([
-  {
-    key: '1',
-    name: 'John Doe',
-    email: 'john.doe@example.com',
-    position: 'Senior Developer',
-    score: 85,
-    uploadedDate: '2024-01-15',
-    skills: ['React', 'TypeScript', 'Node.js']
-  },
-  {
-    key: '2',
-    name: 'Jane Smith',
-    email: 'jane.smith@example.com',
-    position: 'Frontend Developer',
-    score: 92,
-    uploadedDate: '2024-01-14',
-    skills: ['Vue', 'JavaScript', 'CSS']
-  },
-  {
-    key: '3',
-    name: 'Bob Johnson',
-    email: 'bob.johnson@example.com',
-    position: 'Full Stack Developer',
-    score: 68,
-    uploadedDate: '2024-01-13',
-    skills: ['Python', 'Django', 'PostgreSQL']
-  },
-  {
-    key: '4',
-    name: 'Alice Williams',
-    email: 'alice.williams@example.com',
-    position: 'DevOps Engineer',
-    score: 78,
-    uploadedDate: '2024-01-12',
-    skills: ['Docker', 'Kubernetes', 'AWS']
-  },
-  {
-    key: '5',
-    name: 'Charlie Brown',
-    email: 'charlie.brown@example.com',
-    position: 'Backend Developer',
-    score: 88,
-    uploadedDate: '2024-01-11',
-    skills: ['Java', 'Spring Boot', 'MySQL']
-  }
-])
+interface CVItem {
+  key: string
+  name: string
+  email: string
+  score: number
+  uploadedDate: string
+  skills: string[]
+}
+
+const cvData = ref<CVItem[]>([])
+const loading = ref(false)
 
 const searchText = ref('')
 const dateRange = ref<[string, string] | null>(null)
@@ -215,6 +179,33 @@ const clearFilters = () => {
   sortField.value = undefined
   sortOrder.value = undefined
 }
+
+const fetchCVs = async () => {
+  loading.value = true
+  try {
+    const response = await apiClient.get('/cv-results')
+    // Transform the API response to match our data structure
+    // cvData.value = response.data.map((cv: any) => ({
+    //   key: cv.id || cv._id || String(Math.random()),
+    //   name: cv.name || 'Unknown',
+    //   email: cv.email || '',
+    //   score: cv.score || cv.overallScore || 0,
+    //   uploadedDate: cv.uploadedDate || cv.createdAt || new Date().toISOString().split('T')[0],
+    //   skills: cv.skills || []
+    // }))
+
+    console.log(response);
+  } catch (error: any) {
+    console.error('Error fetching CVs:', error)
+    message.error('Failed to load CVs. Please try again later.')
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(() => {
+  fetchCVs()
+})
 </script>
 
 <template>
@@ -283,6 +274,7 @@ const clearFilters = () => {
         <Table
           :columns="columns"
           :data-source="filteredData"
+          :loading="loading"
           :pagination="{ pageSize: 10, showSizeChanger: true, showTotal: (total) => `Total ${total} CVs` }"
           @change="handleTableChange"
           class="cv-table"
