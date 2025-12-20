@@ -10,6 +10,11 @@ class Settings(BaseSettings):
     WEBSITE_DOMAIN: str
     WEBSITE_BASE_PATH: str
 
+    OPENAI_API_KEY: str
+    HTTP_CACHE_PATH: str
+    OPENAI_MODEL: str
+    OPENAI_EMBED_MODEL: str
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

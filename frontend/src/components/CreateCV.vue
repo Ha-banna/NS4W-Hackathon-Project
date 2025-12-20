@@ -4,7 +4,6 @@ import { useRouter } from 'vue-router'
 import {
   Card,
   Form,
-  Input,
   Button,
   Upload,
   Space,
@@ -17,11 +16,13 @@ import {
   FileTextOutlined
 } from '@ant-design/icons-vue'
 import type { UploadFile, UploadProps } from 'ant-design-vue'
+import apiClient from '../api/axios'
 
 const router = useRouter()
 const { Title, Paragraph } = Typography
 
 const fileList = ref<UploadFile[]>([])
+const uploading = ref(false)
 
 const handleFileChange: UploadProps['onChange'] = (info) => {
   fileList.value = info.fileList
@@ -32,46 +33,67 @@ const handleFileChange: UploadProps['onChange'] = (info) => {
   }
 }
 
-const handleSubmit = () => {
-  if (fileList.value.length === 0) {
+const handleSubmit = async () => {
+  if (fileList.value.length === 0 || !fileList.value[0]) {
     message.error('Please upload a CV file')
     return
   }
 
-  // Handle CV submission
-  message.success('CV submitted successfully!')
-  console.log('File:', fileList.value[0])
-  
-  // Navigate back to dashboard after submission
-  setTimeout(() => {
-    router.push('/dashboard')
-  }, 1500)
+  const file = fileList.value[0]
+  const originFile = file.originFileObj
+  if (!originFile) {
+    message.error('Please select a valid file')
+    return
+  }
+
+  uploading.value = true
+
+  try {
+    const formData = new FormData()
+    formData.append('file', originFile)
+
+    const response = await apiClient.post('/analysis/upload-cv', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
+
+    message.success('CV submitted successfully!')
+    console.log('Upload response:', response.data)
+
+    // Navigate back to dashboard after submission
+    setTimeout(() => {
+      router.push('/dashboard')
+    }, 1500)
+  } catch (error: any) {
+    console.error('Error uploading CV:', error)
+    message.error(error.response?.data?.detail || 'Failed to upload CV. Please try again.')
+  } finally {
+    uploading.value = false
+  }
 }
 
 const uploadProps: UploadProps = {
   name: 'file',
-  action: '/api/upload', // Replace with your actual upload endpoint
-  headers: {
-    authorization: 'authorization-text',
-  },
   accept: '.pdf',
   multiple: false,
   maxCount: 1,
   beforeUpload: (file) => {
     const isPDF = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
-    
+
     if (!isPDF) {
       message.error('You can only upload PDF files!')
       return false
     }
-    
+
     const isLt50M = file.size / 1024 / 1024 < 50
     if (!isLt50M) {
       message.error('File must be smaller than 50MB!')
       return false
     }
-    
-    return true
+
+    // Prevent automatic upload - we'll handle it manually in handleSubmit
+    return false
   },
   onChange: handleFileChange,
 }
@@ -108,17 +130,8 @@ const uploadProps: UploadProps = {
       <!-- Form Card -->
       <Card class="form-card">
         <Form layout="vertical" class="cv-form">
-          <Form.Item 
-            label="CV File" 
-            required
-            class="form-item"
-          >
-            <Upload
-              v-model:file-list="fileList"
-              v-bind="uploadProps"
-              class="upload-component"
-              :drag="true"
-            >
+          <Form.Item label="CV File" required class="form-item">
+            <Upload v-model:file-list="fileList" v-bind="uploadProps" class="upload-component" :drag="true">
               <div class="upload-area">
                 <p class="upload-icon">
                   <UploadOutlined />
@@ -131,19 +144,10 @@ const uploadProps: UploadProps = {
 
           <Form.Item class="form-actions">
             <Space size="large">
-              <Button 
-                type="primary" 
-                size="large" 
-                class="submit-button"
-                @click="handleSubmit"
-              >
+              <Button type="primary" size="large" class="submit-button" :loading="uploading" @click="handleSubmit">
                 Submit CV
               </Button>
-              <Button 
-                size="large" 
-                class="cancel-button"
-                @click="router.push('/dashboard')"
-              >
+              <Button size="large" class="cancel-button" @click="router.push('/dashboard')">
                 Cancel
               </Button>
             </Space>
@@ -208,15 +212,19 @@ const uploadProps: UploadProps = {
   0% {
     transform: translate(-200px, -200px) scale(1);
   }
+
   25% {
     transform: translate(100px, 150px) scale(1.2);
   }
+
   50% {
     transform: translate(300px, -100px) scale(0.9);
   }
+
   75% {
     transform: translate(50px, 200px) scale(1.1);
   }
+
   100% {
     transform: translate(-200px, -200px) scale(1);
   }
@@ -226,15 +234,19 @@ const uploadProps: UploadProps = {
   0% {
     transform: translate(calc(100vw + 150px), calc(50vh - 200px)) scale(1);
   }
+
   25% {
     transform: translate(calc(100vw - 100px), calc(50vh + 100px)) scale(1.1);
   }
+
   50% {
     transform: translate(calc(100vw - 400px), calc(50vh - 300px)) scale(0.8);
   }
+
   75% {
     transform: translate(calc(100vw - 200px), calc(50vh + 200px)) scale(1.2);
   }
+
   100% {
     transform: translate(calc(100vw + 150px), calc(50vh - 200px)) scale(1);
   }
@@ -244,15 +256,19 @@ const uploadProps: UploadProps = {
   0% {
     transform: translate(calc(20vw - 300px), calc(100vh + 300px)) scale(1);
   }
+
   25% {
     transform: translate(calc(20vw + 200px), calc(100vh - 100px)) scale(1.3);
   }
+
   50% {
     transform: translate(calc(20vw + 500px), calc(100vh - 400px)) scale(0.9);
   }
+
   75% {
     transform: translate(calc(20vw + 100px), calc(100vh - 200px)) scale(1.1);
   }
+
   100% {
     transform: translate(calc(20vw - 300px), calc(100vh + 300px)) scale(1);
   }

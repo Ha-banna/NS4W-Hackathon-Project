@@ -74,14 +74,14 @@ const filteredData = computed(() => {
     result.sort((a, b) => {
       const aVal = a[sortField.value as keyof typeof a]
       const bVal = b[sortField.value as keyof typeof b]
-      
+
       if (typeof aVal === 'number' && typeof bVal === 'number') {
         return sortOrder.value === 'ascend' ? aVal - bVal : bVal - aVal
       }
-      
+
       const aStr = String(aVal).toLowerCase()
       const bStr = String(bVal).toLowerCase()
-      
+
       if (sortOrder.value === 'ascend') {
         return aStr < bStr ? -1 : aStr > bStr ? 1 : 0
       } else {
@@ -154,8 +154,8 @@ const columns: ColumnsType = [
     width: 120,
     customRender: ({ record }: { record: any }) => {
       // @ts-ignore
-      return h(Button, { 
-        type: 'link', 
+      return h(Button, {
+        type: 'link',
         size: 'small',
         onClick: () => router.push(`/cv/${record.key}`)
       }, () => 'View')
@@ -183,18 +183,24 @@ const clearFilters = () => {
 const fetchCVs = async () => {
   loading.value = true
   try {
-    const response = await apiClient.get('/cv-results')
+    const response = await apiClient.get('/dashboard/cv-results')
     // Transform the API response to match our data structure
-    // cvData.value = response.data.map((cv: any) => ({
-    //   key: cv.id || cv._id || String(Math.random()),
-    //   name: cv.name || 'Unknown',
-    //   email: cv.email || '',
-    //   score: cv.score || cv.overallScore || 0,
-    //   uploadedDate: cv.uploadedDate || cv.createdAt || new Date().toISOString().split('T')[0],
-    //   skills: cv.skills || []
-    // }))
+    const data = Array.isArray(response.data) ? response.data : [response.data]
 
-    console.log(response);
+    cvData.value = data.map((cv: any) => {
+      const candidate = cv.cv?.candidate || {};
+      const skills = cv.cv?.skills || {};
+      const technicalSkills = skills.technical || [];
+
+      return {
+        key: String(cv._id || Math.random()),
+        name: candidate.full_name || 'Unknown',
+        email: candidate.contact?.email || '',
+        score: Math.round(cv.projects_authenticity?.overall_authenticity_score || 0),
+        uploadedDate: cv.cv?.meta?.last_updated || new Date().toISOString().split('T')[0],
+        skills: technicalSkills.slice(0, 10) // Limit to first 10 skills
+      }
+    })
   } catch (error: any) {
     console.error('Error fetching CVs:', error)
     message.error('Failed to load CVs. Please try again later.')
@@ -248,12 +254,7 @@ onMounted(() => {
       <Card class="filters-card">
         <Row :gutter="[16, 16]">
           <Col :xs="24" :sm="12" :md="8" :lg="6">
-            <Input
-              v-model:value="searchText"
-              placeholder="Search CVs..."
-              size="large"
-              class="search-input"
-            >
+            <Input v-model:value="searchText" placeholder="Search CVs..." size="large" class="search-input">
               <template #prefix>
                 <SearchOutlined />
               </template>
@@ -271,14 +272,9 @@ onMounted(() => {
 
       <!-- Table Card -->
       <Card class="table-card">
-        <Table
-          :columns="columns"
-          :data-source="filteredData"
-          :loading="loading"
+        <Table :columns="columns" :data-source="filteredData" :loading="loading"
           :pagination="{ pageSize: 10, showSizeChanger: true, showTotal: (total) => `Total ${total} CVs` }"
-          @change="handleTableChange"
-          class="cv-table"
-        />
+          @change="handleTableChange" class="cv-table" />
       </Card>
     </div>
   </div>
@@ -338,15 +334,19 @@ onMounted(() => {
   0% {
     transform: translate(-200px, -200px) scale(1);
   }
+
   25% {
     transform: translate(100px, 150px) scale(1.2);
   }
+
   50% {
     transform: translate(300px, -100px) scale(0.9);
   }
+
   75% {
     transform: translate(50px, 200px) scale(1.1);
   }
+
   100% {
     transform: translate(-200px, -200px) scale(1);
   }
@@ -356,15 +356,19 @@ onMounted(() => {
   0% {
     transform: translate(calc(100vw + 150px), calc(50vh - 200px)) scale(1);
   }
+
   25% {
     transform: translate(calc(100vw - 100px), calc(50vh + 100px)) scale(1.1);
   }
+
   50% {
     transform: translate(calc(100vw - 400px), calc(50vh - 300px)) scale(0.8);
   }
+
   75% {
     transform: translate(calc(100vw - 200px), calc(50vh + 200px)) scale(1.2);
   }
+
   100% {
     transform: translate(calc(100vw + 150px), calc(50vh - 200px)) scale(1);
   }
@@ -374,15 +378,19 @@ onMounted(() => {
   0% {
     transform: translate(calc(20vw - 300px), calc(100vh + 300px)) scale(1);
   }
+
   25% {
     transform: translate(calc(20vw + 200px), calc(100vh - 100px)) scale(1.3);
   }
+
   50% {
     transform: translate(calc(20vw + 500px), calc(100vh - 400px)) scale(0.9);
   }
+
   75% {
     transform: translate(calc(20vw + 100px), calc(100vh - 200px)) scale(1.1);
   }
+
   100% {
     transform: translate(calc(20vw - 300px), calc(100vh + 300px)) scale(1);
   }

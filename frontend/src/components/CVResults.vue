@@ -7,7 +7,8 @@ import {
   Typography,
   Divider,
   Tag,
-  Space
+  Space,
+  message
 } from 'ant-design-vue'
 import {
   ArrowLeftOutlined,
@@ -17,6 +18,7 @@ import {
   ExclamationCircleOutlined
 } from '@ant-design/icons-vue'
 import ScoreCircle from './ScoreCircle.vue'
+import apiClient from '../api/axios'
 
 const router = useRouter()
 const route = useRoute()
@@ -48,139 +50,122 @@ interface CVData {
 const cvData = ref<CVData | null>(null)
 const loading = ref(true)
 
-// Generate mock dynamic categories based on CV ID
-const generateMockCategories = (cvId: string): Category[] => {
-  // Different CVs can have different categories
-  const categoryTemplates: Record<string, Category[]> = {
-    '1': [
-      {
-        name: 'Technical Skills',
-        items: [
-          { id: '1', name: 'React', value: 'Expert level with 5+ years experience', authenticityScore: 92 },
-          { id: '2', name: 'TypeScript', value: 'Advanced proficiency, used in 10+ projects', authenticityScore: 88 },
-          { id: '3', name: 'Node.js', value: 'Strong backend development skills', authenticityScore: 85 },
-          { id: '4', name: 'Redux', value: 'State management expertise', authenticityScore: 78 }
-        ]
-      },
-      {
-        name: 'Projects',
-        items: [
-          { id: '5', name: 'E-commerce Platform', value: 'Full-stack application with payment integration', authenticityScore: 90 },
-          { id: '6', name: 'Task Management App', value: 'React-based collaborative tool', authenticityScore: 82 },
-          { id: '7', name: 'API Gateway', value: 'Microservices architecture implementation', authenticityScore: 75 }
-        ]
-      },
-      {
-        name: 'Education',
-        items: [
-          { id: '8', name: 'Computer Science Degree', value: 'Bachelor of Science, 2018-2022', authenticityScore: 95 },
-          { id: '9', name: 'React Certification', value: 'Meta React Developer Certificate', authenticityScore: 88 }
-        ]
-      },
-      {
-        name: 'Work Experience',
-        items: [
-          { id: '10', name: 'Senior Developer', value: 'TechCorp Inc., 2020-Present', authenticityScore: 92 },
-          { id: '11', name: 'Junior Developer', value: 'StartupXYZ, 2018-2020', authenticityScore: 85 }
-        ]
+const transformAPIDataToCategories = (apiData: any): Category[] => {
+  const categories: Category[] = []
+  let itemId = 1
+
+  // Skill Evidence Category
+  if (apiData.skill_evidence?.skills) {
+    const skillItems: CVItem[] = []
+    const skills = apiData.skill_evidence.skills
+
+    for (const [skillName, skillData] of Object.entries(skills)) {
+      const skill = skillData as any
+      if (skill.status === 'supported' && !skill.fake) {
+        const confidence = Math.round((skill.confidence || 0) * 100)
+        skillItems.push({
+          id: String(itemId++),
+          name: skillName,
+          value: skill.evidence?.length
+            ? `${skill.evidence.length} evidence(s) found`
+            : 'No evidence',
+          authenticityScore: confidence
+        })
       }
-    ],
-    '2': [
-      {
-        name: 'Frontend Skills',
-        items: [
-          { id: '1', name: 'Vue.js', value: 'Expert in Vue 3 Composition API', authenticityScore: 95 },
-          { id: '2', name: 'JavaScript', value: 'ES6+ proficiency', authenticityScore: 90 },
-          { id: '3', name: 'CSS/SCSS', value: 'Advanced styling and animations', authenticityScore: 88 }
-        ]
-      },
-      {
-        name: 'Design Tools',
-        items: [
-          { id: '4', name: 'Figma', value: 'UI/UX design experience', authenticityScore: 80 },
-          { id: '5', name: 'Adobe XD', value: 'Prototyping skills', authenticityScore: 75 }
-        ]
-      },
-      {
-        name: 'Projects',
-        items: [
-          { id: '6', name: 'Portfolio Website', value: 'Personal portfolio with animations', authenticityScore: 88 },
-          { id: '7', name: 'Dashboard UI', value: 'Admin dashboard component library', authenticityScore: 85 }
-        ]
-      }
-    ],
-    '3': [
-      {
-        name: 'Backend Skills',
-        items: [
-          { id: '1', name: 'Python', value: 'Advanced Python programming', authenticityScore: 90 },
-          { id: '2', name: 'Django', value: 'Full-stack framework expertise', authenticityScore: 88 },
-          { id: '3', name: 'PostgreSQL', value: 'Database design and optimization', authenticityScore: 85 }
-        ]
-      },
-      {
-        name: 'DevOps',
-        items: [
-          { id: '4', name: 'Docker', value: 'Containerization experience', authenticityScore: 82 },
-          { id: '5', name: 'CI/CD', value: 'GitHub Actions, Jenkins', authenticityScore: 78 }
-        ]
-      }
-    ]
+    }
+
+    if (skillItems.length > 0) {
+      categories.push({
+        name: 'Skill Evidence',
+        items: skillItems
+      })
+    }
   }
 
-  // Default categories if CV ID not found
-  return categoryTemplates[cvId] || [
-    {
-      name: 'Skills',
-      items: [
-        { id: '1', name: 'General Skills', value: 'Various technical skills', authenticityScore: 75 }
-      ]
+  // Project Authenticity Category
+  if (apiData.projects_authenticity?.repos) {
+    const projectItems: CVItem[] = []
+    const repos = apiData.projects_authenticity.repos
+
+    for (const [repoName, repoData] of Object.entries(repos)) {
+      const repo = repoData as any
+      projectItems.push({
+        id: String(itemId++),
+        name: repoName.split('/').pop() || repoName,
+        value: repo.description || 'No description',
+        authenticityScore: Math.round(repo.authenticity_score || 0)
+      })
     }
-  ]
+
+    if (projectItems.length > 0) {
+      categories.push({
+        name: 'Project Authenticity',
+        items: projectItems
+      })
+    }
+  }
+
+  // Skill Inflation Category
+  if (apiData.skill_inflation?.skills) {
+    const inflationItems: CVItem[] = []
+    const skills = apiData.skill_inflation.skills
+
+    for (const [skillName, skillData] of Object.entries(skills)) {
+      const skill = skillData as any
+      if (skill.overclaim) {
+        inflationItems.push({
+          id: String(itemId++),
+          name: skillName,
+          value: `Claimed: ${skill.claimed_level || 'unknown'}, Observed: ${skill.observed_level || 'unknown'}`,
+          authenticityScore: Math.max(0, 100 - (skill.severity || 0) * 20)
+        })
+      }
+    }
+
+    if (inflationItems.length > 0) {
+      categories.push({
+        name: 'Skill Inflation Detection',
+        items: inflationItems
+      })
+    }
+  }
+
+  return categories
 }
 
-const loadCVData = () => {
+const loadCVData = async () => {
   const cvId = route.params.id as string
-  
-  // Mock CV data - replace with API call
-  const mockCVs: Record<string, Omit<CVData, 'categories'>> = {
-    '1': {
-      id: '1',
-      name: 'John Doe',
-      email: 'john.doe@example.com',
-      uploadedDate: '2024-01-15',
-      overallScore: 85
-    },
-    '2': {
-      id: '2',
-      name: 'Jane Smith',
-      email: 'jane.smith@example.com',
-      uploadedDate: '2024-01-14',
-      overallScore: 92
-    },
-    '3': {
-      id: '3',
-      name: 'Bob Johnson',
-      email: 'bob.johnson@example.com',
-      uploadedDate: '2024-01-13',
-      overallScore: 68
+  loading.value = true
+
+  try {
+    // Fetch all CVs and find the one matching the ID
+    const response = await apiClient.get(`/dashboard/cv-result/${cvId}`)
+    const cv = response.data;
+    console.log(cv)
+    if (!cv) {
+      message.error('CV not found')
+      router.push('/dashboard')
+      return
     }
-  }
 
-  const baseData = mockCVs[cvId] || {
-    id: cvId,
-    name: 'Unknown Candidate',
-    email: 'unknown@example.com',
-    uploadedDate: new Date().toISOString().split('T')[0],
-    overallScore: 75
-  }
+    const candidate = cv.cv?.candidate || {}
+    const overallScore = Math.round(cv.projects_authenticity?.overall_authenticity_score || 0)
 
-  cvData.value = {
-    ...baseData,
-    categories: generateMockCategories(cvId)
+    cvData.value = {
+      id: String(cv._id),
+      name: candidate.full_name || 'Unknown',
+      email: candidate.contact?.email || '',
+      uploadedDate: cv.cv?.meta?.last_updated || new Date().toISOString().split('T')[0],
+      overallScore: overallScore,
+      categories: transformAPIDataToCategories(cv)
+    }
+  } catch (error: any) {
+    console.error('Error fetching CV data:', error)
+    message.error('Failed to load CV data. Please try again later.')
+    router.push('/dashboard')
+  } finally {
+    loading.value = false
   }
-
-  loading.value = false
 }
 
 onMounted(() => {
@@ -214,12 +199,7 @@ const getScoreLabel = (score: number) => {
       <div class="main-content">
         <!-- Header -->
         <div class="page-header">
-          <Button 
-            type="text" 
-            size="large" 
-            class="back-button" 
-            @click="router.push('/dashboard')"
-          >
+          <Button type="text" size="large" class="back-button" @click="router.push('/dashboard')">
             <template #icon>
               <ArrowLeftOutlined />
             </template>
@@ -278,21 +258,13 @@ const getScoreLabel = (score: number) => {
 
           <!-- Dynamic Categories -->
           <div class="categories-container">
-            <div 
-              v-for="(category, categoryIndex) in cvData.categories" 
-              :key="categoryIndex"
-              class="category-section"
-            >
+            <div v-for="(category, categoryIndex) in cvData.categories" :key="categoryIndex" class="category-section">
               <Title :level="5" class="category-title">
                 {{ category.name }}
               </Title>
-              
+
               <div class="category-items">
-                <div 
-                  v-for="item in category.items" 
-                  :key="item.id"
-                  class="category-item"
-                >
+                <div v-for="item in category.items" :key="item.id" class="category-item">
                   <div class="item-content">
                     <div class="item-header">
                       <Text strong class="item-name">{{ item.name }}</Text>
@@ -300,10 +272,7 @@ const getScoreLabel = (score: number) => {
                     </div>
                     <Text class="item-value">{{ item.value }}</Text>
                     <div class="item-footer">
-                      <Tag 
-                        :color="getScoreColor(item.authenticityScore)"
-                        class="authenticity-tag"
-                      >
+                      <Tag :color="getScoreColor(item.authenticityScore)" class="authenticity-tag">
                         {{ getScoreLabel(item.authenticityScore) }} Authenticity
                       </Tag>
                     </div>
@@ -379,15 +348,19 @@ const getScoreLabel = (score: number) => {
   0% {
     transform: translate(-200px, -200px) scale(1);
   }
+
   25% {
     transform: translate(100px, 150px) scale(1.2);
   }
+
   50% {
     transform: translate(300px, -100px) scale(0.9);
   }
+
   75% {
     transform: translate(50px, 200px) scale(1.1);
   }
+
   100% {
     transform: translate(-200px, -200px) scale(1);
   }
@@ -397,15 +370,19 @@ const getScoreLabel = (score: number) => {
   0% {
     transform: translate(calc(100vw + 150px), calc(50vh - 200px)) scale(1);
   }
+
   25% {
     transform: translate(calc(100vw - 100px), calc(50vh + 100px)) scale(1.1);
   }
+
   50% {
     transform: translate(calc(100vw - 400px), calc(50vh - 300px)) scale(0.8);
   }
+
   75% {
     transform: translate(calc(100vw - 200px), calc(50vh + 200px)) scale(1.2);
   }
+
   100% {
     transform: translate(calc(100vw + 150px), calc(50vh - 200px)) scale(1);
   }
@@ -415,15 +392,19 @@ const getScoreLabel = (score: number) => {
   0% {
     transform: translate(calc(20vw - 300px), calc(100vh + 300px)) scale(1);
   }
+
   25% {
     transform: translate(calc(20vw + 200px), calc(100vh - 100px)) scale(1.3);
   }
+
   50% {
     transform: translate(calc(20vw + 500px), calc(100vh - 400px)) scale(0.9);
   }
+
   75% {
     transform: translate(calc(20vw + 100px), calc(100vh - 200px)) scale(1.1);
   }
+
   100% {
     transform: translate(calc(20vw - 300px), calc(100vh + 300px)) scale(1);
   }
