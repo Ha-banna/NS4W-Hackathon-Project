@@ -4,7 +4,6 @@ import { useRouter } from 'vue-router'
 import {
   Card,
   Form,
-  Input,
   Button,
   Upload,
   Space,
@@ -17,11 +16,13 @@ import {
   FileTextOutlined
 } from '@ant-design/icons-vue'
 import type { UploadFile, UploadProps } from 'ant-design-vue'
+import apiClient from '../api/axios'
 
 const router = useRouter()
 const { Title, Paragraph } = Typography
 
 const fileList = ref<UploadFile[]>([])
+const uploading = ref(false)
 
 const handleFileChange: UploadProps['onChange'] = (info) => {
   fileList.value = info.fileList
@@ -32,28 +33,48 @@ const handleFileChange: UploadProps['onChange'] = (info) => {
   }
 }
 
-const handleSubmit = () => {
-  if (fileList.value.length === 0) {
+const handleSubmit = async () => {
+  if (fileList.value.length === 0 || !fileList.value[0]) {
     message.error('Please upload a CV file')
     return
   }
 
-  // Handle CV submission
-  message.success('CV submitted successfully!')
-  console.log('File:', fileList.value[0])
-  
-  // Navigate back to dashboard after submission
-  setTimeout(() => {
-    router.push('/dashboard')
-  }, 1500)
+  const file = fileList.value[0]
+  const originFile = file.originFileObj
+  if (!originFile) {
+    message.error('Please select a valid file')
+    return
+  }
+
+  uploading.value = true
+
+  try {
+    const formData = new FormData()
+    formData.append('file', originFile)
+
+    const response = await apiClient.post('/analysis/upload-cv', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
+
+    message.success('CV submitted successfully!')
+    console.log('Upload response:', response.data)
+    
+    // Navigate back to dashboard after submission
+    setTimeout(() => {
+      router.push('/dashboard')
+    }, 1500)
+  } catch (error: any) {
+    console.error('Error uploading CV:', error)
+    message.error(error.response?.data?.detail || 'Failed to upload CV. Please try again.')
+  } finally {
+    uploading.value = false
+  }
 }
 
 const uploadProps: UploadProps = {
   name: 'file',
-  action: '/api/upload', // Replace with your actual upload endpoint
-  headers: {
-    authorization: 'authorization-text',
-  },
   accept: '.pdf',
   multiple: false,
   maxCount: 1,
@@ -71,7 +92,8 @@ const uploadProps: UploadProps = {
       return false
     }
     
-    return true
+    // Prevent automatic upload - we'll handle it manually in handleSubmit
+    return false
   },
   onChange: handleFileChange,
 }
@@ -135,6 +157,7 @@ const uploadProps: UploadProps = {
                 type="primary" 
                 size="large" 
                 class="submit-button"
+                :loading="uploading"
                 @click="handleSubmit"
               >
                 Submit CV
