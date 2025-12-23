@@ -37,6 +37,18 @@ interface Category {
   items: CVItem[]
 }
 
+interface InterviewQuestion {
+  skill: string
+  claimedLevel: string
+  evidenceLevel: string
+  overclaim: boolean
+  rationale: string
+  theoretical: string[]
+  practical: string[]
+  debugging: string[]
+  focusAreas: string[]
+}
+
 interface CVData {
   id: string
   name: string
@@ -44,6 +56,8 @@ interface CVData {
   uploadedDate: string
   overallScore: number
   categories: Category[]
+  interviewQuestions: InterviewQuestion[]
+  pdfUrl: string
 }
 
 // Mock data - replace with API call
@@ -133,6 +147,31 @@ const transformAPIDataToCategories = (apiData: any): Category[] => {
   return categories
 }
 
+const transformInterviewQuestions = (apiData: any): InterviewQuestion[] => {
+  const questions: InterviewQuestion[] = []
+  
+  if (apiData.interview_questions?.skills) {
+    const skills = apiData.interview_questions.skills
+    
+    for (const [skillName, skillData] of Object.entries(skills)) {
+      const skill = skillData as any
+      questions.push({
+        skill: skillName,
+        claimedLevel: skill.claimed_level || 'unspecified',
+        evidenceLevel: skill.evidence_level || 'none',
+        overclaim: skill.overclaim || false,
+        rationale: skill.rationale || '',
+        theoretical: skill.theoretical || [],
+        practical: skill.practical || [],
+        debugging: skill.debugging || [],
+        focusAreas: skill.focus_areas || []
+      })
+    }
+  }
+  
+  return questions
+}
+
 const loadCVData = async () => {
   const cvId = route.params.id as string
   loading.value = true
@@ -150,14 +189,21 @@ const loadCVData = async () => {
 
     const candidate = cv.cv?.candidate || {}
     const overallScore = Math.round(cv.projects_authenticity?.overall_authenticity_score || 0)
+    const cvIdStr = String(cv._id)
+    
+    // Build PDF URL
+    const baseURL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000'
+    const pdfUrl = `${baseURL}/dashboard/cv-pdf/${cvIdStr}`
 
     cvData.value = {
-      id: String(cv._id),
+      id: cvIdStr,
       name: candidate.full_name || 'Unknown',
       email: candidate.contact?.email || '',
       uploadedDate: cv.cv?.meta?.last_updated || new Date().toISOString().split('T')[0],
       overallScore: overallScore,
-      categories: transformAPIDataToCategories(cv)
+      categories: transformAPIDataToCategories(cv),
+      interviewQuestions: transformInterviewQuestions(cv),
+      pdfUrl: pdfUrl
     }
   } catch (error: any) {
     console.error('Error fetching CV data:', error)
@@ -232,12 +278,98 @@ const getScoreLabel = (score: number) => {
         <Card class="cv-preview-card">
           <Title :level="4" class="section-title">CV Document</Title>
           <div class="cv-preview">
-            <div class="cv-placeholder">
+            <iframe 
+              v-if="cvData.pdfUrl"
+              :src="cvData.pdfUrl" 
+              class="pdf-viewer"
+              type="application/pdf"
+            ></iframe>
+            <div v-else class="cv-placeholder">
               <FileTextOutlined class="cv-icon" />
               <Paragraph class="cv-placeholder-text">
-                CV Document Preview
+                CV Document Not Available
               </Paragraph>
-              <Text type="secondary">PDF viewer would be integrated here</Text>
+            </div>
+          </div>
+        </Card>
+
+        <!-- Interview Questions Card -->
+        <Card v-if="cvData.interviewQuestions && cvData.interviewQuestions.length > 0" class="interview-questions-card">
+          <Title :level="4" class="section-title">Recommended Interview Questions</Title>
+          <div class="interview-questions-container">
+            <div 
+              v-for="(questionSet, index) in cvData.interviewQuestions" 
+              :key="index"
+              class="question-set"
+            >
+              <div class="question-set-header">
+                <Title :level="5" class="skill-title">{{ questionSet.skill }}</Title>
+                <div class="skill-metadata">
+                  <Space size="small" wrap>
+                    <Tag :color="questionSet.overclaim ? 'red' : 'green'">
+                      {{ questionSet.overclaim ? 'Overclaim Detected' : 'Authentic' }}
+                    </Tag>
+                    <Tag>Claimed: {{ questionSet.claimedLevel }}</Tag>
+                    <Tag>Evidence: {{ questionSet.evidenceLevel }}</Tag>
+                  </Space>
+                </div>
+                <Text v-if="questionSet.rationale" type="secondary" class="rationale-text">
+                  {{ questionSet.rationale }}
+                </Text>
+              </div>
+
+              <div class="questions-content">
+                <div v-if="questionSet.theoretical && questionSet.theoretical.length > 0" class="question-category">
+                  <Title :level="5" class="category-title">
+                    <CheckCircleOutlined /> Theoretical Questions
+                  </Title>
+                  <ul class="question-list">
+                    <li v-for="(question, qIndex) in questionSet.theoretical" :key="qIndex" class="question-item">
+                      {{ question }}
+                    </li>
+                  </ul>
+                </div>
+
+                <div v-if="questionSet.practical && questionSet.practical.length > 0" class="question-category">
+                  <Title :level="5" class="category-title">
+                    <CheckCircleOutlined /> Practical Questions
+                  </Title>
+                  <ul class="question-list">
+                    <li v-for="(question, qIndex) in questionSet.practical" :key="qIndex" class="question-item">
+                      {{ question }}
+                    </li>
+                  </ul>
+                </div>
+
+                <div v-if="questionSet.debugging && questionSet.debugging.length > 0" class="question-category">
+                  <Title :level="5" class="category-title">
+                    <CheckCircleOutlined /> Debugging Questions
+                  </Title>
+                  <ul class="question-list">
+                    <li v-for="(question, qIndex) in questionSet.debugging" :key="qIndex" class="question-item">
+                      {{ question }}
+                    </li>
+                  </ul>
+                </div>
+
+                <div v-if="questionSet.focusAreas && questionSet.focusAreas.length > 0" class="question-category">
+                  <Title :level="5" class="category-title">
+                    <ExclamationCircleOutlined /> Focus Areas
+                  </Title>
+                  <div class="focus-areas">
+                    <Tag 
+                      v-for="(area, aIndex) in questionSet.focusAreas" 
+                      :key="aIndex"
+                      color="purple"
+                      class="focus-area-tag"
+                    >
+                      {{ area }}
+                    </Tag>
+                  </div>
+                </div>
+              </div>
+
+              <Divider v-if="index < cvData.interviewQuestions.length - 1" />
             </div>
           </div>
         </Card>
@@ -506,6 +638,14 @@ const getScoreLabel = (score: number) => {
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
+}
+
+.pdf-viewer {
+  width: 100%;
+  height: 800px;
+  border: none;
+  background: rgba(255, 255, 255, 0.95);
 }
 
 .cv-placeholder {
@@ -666,6 +806,131 @@ const getScoreLabel = (score: number) => {
   align-items: center;
   min-height: 400px;
   color: rgba(255, 255, 255, 0.7);
+}
+
+.interview-questions-card {
+  margin-top: 24px;
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(114, 46, 209, 0.2);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.interview-questions-card :deep(.ant-card-body) {
+  padding: 32px;
+}
+
+.interview-questions-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.question-set {
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(114, 46, 209, 0.15);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.question-set:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(114, 46, 209, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(114, 46, 209, 0.2);
+}
+
+.question-set-header {
+  margin-bottom: 20px;
+}
+
+.skill-title {
+  margin-bottom: 12px !important;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 600;
+  font-size: 1.2rem;
+}
+
+.skill-metadata {
+  margin-bottom: 12px;
+}
+
+.rationale-text {
+  display: block;
+  margin-top: 8px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
+  font-style: italic;
+  line-height: 1.5;
+}
+
+.questions-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.question-category {
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+  border-left: 3px solid rgba(114, 46, 209, 0.5);
+}
+
+.category-title {
+  margin-bottom: 12px !important;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 600;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.question-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.question-item {
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.6;
+  position: relative;
+  padding-left: 32px;
+  transition: all 0.2s ease;
+}
+
+.question-item::before {
+  content: "•";
+  position: absolute;
+  left: 16px;
+  color: #b37feb;
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+
+.question-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateX(4px);
+}
+
+.focus-areas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.focus-area-tag {
+  margin: 0;
+  padding: 4px 12px;
+  font-size: 0.85rem;
 }
 
 /* Responsive */
